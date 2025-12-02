@@ -39,10 +39,27 @@ fi
 
 echo ""
 echo "=================================="
-echo "Build complete! Image: mqtt-logger:latest"
+echo "✅ Build complete! Image: mqtt-logger:latest"
 echo ""
-echo "Run with:"
-echo "  docker run -d --name mqtt-logger -v \$(pwd)/data:/app/data -e MQTT_BROKER=your-broker mqtt-logger:latest"
+echo "Quick start:"
+echo "  docker run -d --name mqtt-logger \\"
+echo "    -v \$(pwd)/data:/app/data \\"
+echo "    -v \$(pwd)/logs:/app/logs \\"
+echo "    -e MQTT_BROKER=your-broker \\"
+echo "    -e TOPICS=\"topic/#:table:Description\" \\"
+if [ -n "$SMTP_SERVER" ]; then
+    echo "    -e ALERT_EMAIL_TO=you@example.com \\"
+fi
+echo "    mqtt-logger:latest"
 echo ""
-echo "See DOCKER.md for full documentation"
+echo "📧 Startup email notification: $([ -n "$SMTP_SERVER" ] && echo "ENABLED" || echo "Disabled (no SMTP configured)")"
+if [ -n "$SMTP_SERVER" ]; then
+    echo ""
+    echo "To debug email issues:"
+    echo "  ./debug-email.sh mqtt-logger"
+    echo "  tail -f logs/msmtp.log"
+fi
+echo ""
+echo "📖 Full documentation: DOCKER.md"
+echo ""
 

@@ -12,13 +12,16 @@ echo ""
 MQTT_BROKER="${MQTT_BROKER:-192.168.1.100}"
 ALERT_EMAIL="${ALERT_EMAIL:-}"
 DATA_DIR="${DATA_DIR:-$(pwd)/tree-data}"
+LOGS_DIR="${LOGS_DIR:-$(pwd)/tree-logs}"
 
-# Create data directory
+# Create directories
 mkdir -p "$DATA_DIR"
+mkdir -p "$LOGS_DIR"
 
 echo "Configuration:"
 echo "  MQTT Broker: $MQTT_BROKER"
 echo "  Data Directory: $DATA_DIR"
+echo "  Logs Directory: $LOGS_DIR"
 echo "  Email Alerts: ${ALERT_EMAIL:-disabled}"
 echo ""
 
@@ -35,6 +38,7 @@ docker run -d \
   --name christmas-tree \
   --restart unless-stopped \
   -v "$DATA_DIR":/app/data \
+  -v "$LOGS_DIR":/app/logs \
   -e TZ=America/New_York \
   -e MQTT_BROKER="$MQTT_BROKER" \
   -e TOPICS="christmas/tree/water/#:water_level:Tree water level;christmas/tree/status/#:tree_status:Tree status" \
@@ -50,10 +54,13 @@ docker run -d \
 echo ""
 echo "🎄 Christmas tree monitor started!"
 echo ""
-echo "Check status with:"
+echo "Check application logs:"
 echo "  docker logs -f christmas-tree"
 echo ""
-echo "Query water levels with:"
+echo "Check email/SMTP logs:"
+echo "  tail -f $LOGS_DIR/msmtp.log"
+echo ""
+echo "Query water levels:"
 echo "  duckdb $DATA_DIR/christmas_tree.db \"SELECT * FROM water_level ORDER BY timestamp DESC LIMIT 10\""
 echo ""
 echo "Stop with:"

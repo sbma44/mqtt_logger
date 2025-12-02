@@ -16,7 +16,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     msmtp \
     msmtp-mta \
     ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && ln -sf /usr/bin/msmtp /usr/bin/mail 2>/dev/null || true \
+    && ln -sf /usr/bin/msmtp /usr/sbin/sendmail 2>/dev/null || true
 
 # Configure msmtp if SMTP settings are provided
 RUN if [ -n "$SMTP_SERVER" ]; then \
@@ -39,7 +41,7 @@ RUN if [ -n "$SMTP_SERVER" ]; then \
     fi
 
 # Copy project files
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml uv.lock README.md ./
 COPY src ./src
 COPY main.py ./
 COPY docker-entrypoint.sh ./

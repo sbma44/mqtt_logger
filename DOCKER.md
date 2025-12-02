@@ -22,6 +22,8 @@ docker build \
   -t mqtt-logger .
 ```
 
+**Note:** The container will send a startup success email when `ALERT_EMAIL_TO` is configured, confirming that MQTT Logger started successfully with your configuration details.
+
 ### 2. Run the Container
 
 **Basic usage:**
@@ -30,6 +32,7 @@ docker run -d \
   --name mqtt-logger \
   --restart unless-stopped \
   -v $(pwd)/data:/app/data \
+  -v $(pwd)/logs:/app/logs \
   -e MQTT_BROKER=mqtt.example.com \
   -e TOPICS="sensors/#:sensors:Sensor data" \
   mqtt-logger
@@ -53,11 +56,14 @@ docker run -d \
   -e DB_FLUSH_INTERVAL=300 \
   -e TOPICS="sensors/temp/#:temperature:Temperature sensors;sensors/humidity/#:humidity:Humidity sensors" \
   -e LOG_LEVEL=INFO \
+  -e LOG_FILE=/app/logs/mqtt_logger.log \
   -e ALERT_EMAIL_TO=admin@example.com \
   -e ALERT_DB_SIZE_MB=10000 \
   -e ALERT_FREE_SPACE_MB=2000 \
   mqtt-logger
 ```
+
+**Note:** Always mount both `/app/data` (database) and `/app/logs` (logs including msmtp.log for email debugging).
 
 ## Environment Variables
 
@@ -113,6 +119,8 @@ pattern:table_name:description;pattern2:table_name2:description2
 | `ALERT_FREE_SPACE_MB` | Free space threshold (MB) | `""` (disabled) | `2000` (2GB) |
 | `ALERT_COOLDOWN_HOURS` | Hours between alerts | `24` | `12` or `48` |
 
+**Startup Notification:** When `ALERT_EMAIL_TO` is configured, a success email is automatically sent when the container starts, confirming configuration and connectivity.
+
 ### System Configuration
 
 | Variable | Description | Default | Example |
@@ -140,6 +148,7 @@ docker run -d \
   --name christmas-tree \
   --restart unless-stopped \
   -v $(pwd)/tree-data:/app/data \
+  -v $(pwd)/tree-logs:/app/logs \
   -e TZ=America/New_York \
   -e MQTT_BROKER=192.168.1.100 \
   -e TOPICS="christmas/tree/water/#:water_level:Tree water level" \
@@ -147,6 +156,9 @@ docker run -d \
   -e ALERT_EMAIL_TO=you@example.com \
   -e ALERT_DB_SIZE_MB=100 \
   mqtt-logger
+
+# Debug email issues:
+tail -f tree-logs/msmtp.log
 ```
 
 ### Home Automation Sensors
@@ -233,9 +245,13 @@ docker exec mqtt-logger cat /app/config/mqtt_logger.toml
 Mount these directories to persist data:
 
 ```bash
--v $(pwd)/data:/app/data        # Database files
--v $(pwd)/logs:/app/logs        # Log files (optional)
+-v $(pwd)/data:/app/data        # Database files (required)
+-v $(pwd)/logs:/app/logs        # Log files (recommended for debugging)
 ```
+
+**Important:** Always mount `/app/logs` to access:
+- `msmtp.log` - Email/SMTP debugging information
+- `mqtt_logger.log` - Application logs (if LOG_FILE is set)
 
 ### Backup Database
 
@@ -344,10 +360,21 @@ mosquitto_pub -h mqtt.example.com -t 'test/topic' -m 'test'
 # Check msmtp config
 docker exec mqtt-logger cat /root/.msmtprc
 
-# Test email
-docker exec mqtt-logger bash -c 'echo "Test" | mail -s "Test" you@example.com'
+# Test email using msmtp directly (most reliable)
+docker exec mqtt-logger bash -c 'cat <<EOF | /usr/bin/msmtp -t
+To: you@example.com
+Subject: Test Email
 
-# Check msmtp logs
+This is a test
+EOF'
+
+# Or use the test script
+./test-email-in-container.sh mqtt-logger you@example.com
+
+# Check msmtp logs (from host - easier!)
+tail -f logs/msmtp.log
+
+# Or from inside container
 docker exec mqtt-logger cat /app/logs/msmtp.log
 ```
 
