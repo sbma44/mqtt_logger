@@ -343,3 +343,48 @@ pattern = "test/#"
     finally:
         Path(config_path).unlink()
 
+
+def test_load_config_env_var_override():
+    """Test that environment variables override TOML values."""
+    import os
+    
+    config_content = """
+[mqtt]
+broker = "localhost"
+port = 1883
+
+[database]
+path = "test.db"
+batch_size = 100
+flush_interval = 10
+
+[[topics]]
+pattern = "test/#"
+table_name = "test"
+"""
+    
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
+        f.write(config_content)
+        config_path = f.name
+    
+    try:
+        # Set environment variables
+        os.environ["DB_BATCH_SIZE"] = "5000"
+        os.environ["DB_FLUSH_INTERVAL"] = "300"
+        os.environ["MQTT_PORT"] = "8883"
+        
+        config = load_config(config_path)
+        
+        # Verify env vars override TOML values
+        assert config.database.batch_size == 5000  # Override from env
+        assert config.database.flush_interval == 300  # Override from env
+        assert config.mqtt.port == 8883  # Override from env
+        assert config.database.path == "test.db"  # Not overridden
+        
+    finally:
+        # Clean up environment variables
+        os.environ.pop("DB_BATCH_SIZE", None)
+        os.environ.pop("DB_FLUSH_INTERVAL", None)
+        os.environ.pop("MQTT_PORT", None)
+        Path(config_path).unlink()
+

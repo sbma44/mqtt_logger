@@ -67,6 +67,11 @@ docker run -d \
 
 ## Environment Variables
 
+**Important:** Environment variables **override** TOML config values at runtime. This means you can:
+1. Use a base TOML config file
+2. Override specific values with `-e` flags when running the container
+3. No need to rebuild or regenerate config files
+
 ### MQTT Configuration
 
 | Variable | Description | Default | Example |

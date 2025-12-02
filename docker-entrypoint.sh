@@ -89,42 +89,8 @@ echo "----------------------------------------"
 cat "$CONFIG_FILE"
 echo "----------------------------------------"
 
-# Send startup success email if configured
-if [ -n "$ALERT_EMAIL_TO" ]; then
-    echo "Sending startup notification email to $ALERT_EMAIL_TO..."
-
-    HOSTNAME=$(hostname)
-    START_TIME=$(date)
-
-    # Use msmtp directly instead of mail command
-    {
-        echo "To: $ALERT_EMAIL_TO"
-        echo "Subject: MQTT Logger Started Successfully"
-        echo ""
-        echo "MQTT Logger has started successfully!"
-        echo ""
-        echo "Container: $HOSTNAME"
-        echo "Start Time: $START_TIME"
-        echo "MQTT Broker: ${MQTT_BROKER}:${MQTT_PORT}"
-        echo "Database: ${DB_PATH}"
-        echo "Topics: ${TOPICS}"
-        echo ""
-        echo "Configuration Summary:"
-        echo "- Batch Size: ${DB_BATCH_SIZE} messages"
-        echo "- Flush Interval: ${DB_FLUSH_INTERVAL} seconds"
-        echo "- Log Level: ${LOG_LEVEL}"
-        echo ""
-        echo "Email alerts are configured and active."
-        echo ""
-        echo "This is an automated notification."
-    } | /usr/bin/msmtp -t 2>&1 | tee -a /app/logs/msmtp.log
-
-    if [ ${PIPESTATUS[0]} -eq 0 ]; then
-        echo "✅ Startup notification sent successfully"
-    else
-        echo "❌ Failed to send startup email - check /app/logs/msmtp.log for details"
-    fi
-fi
+# Startup notification is now sent by Python code after config is loaded
+# This ensures the email shows actual values after env var overrides
 
 # Run the application
 exec uv run python main.py "$CONFIG_FILE"
