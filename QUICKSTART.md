@@ -24,6 +24,27 @@ uv run python main.py
 uv run python main.py /path/to/config.toml
 ```
 
+## Running with Docker
+
+```bash
+# Build image
+docker build -t mqtt-logger .
+
+# Run container
+docker run -d \
+  --name mqtt-logger \
+  --restart unless-stopped \
+  -v $(pwd)/data:/app/data \
+  -e MQTT_BROKER=mqtt.example.com \
+  -e TOPICS="sensors/#:sensors:Sensor data" \
+  mqtt-logger
+
+# View logs
+docker logs -f mqtt-logger
+```
+
+See [DOCKER.md](DOCKER.md) for complete Docker documentation.
+
 ## Running Tests
 
 ```bash

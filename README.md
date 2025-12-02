@@ -477,12 +477,31 @@ For issues and questions:
 - Check existing issues for solutions
 - Review logs with `journalctl -u mqtt-logger`
 
+## Docker Deployment
+
+Full Docker support with environment variable configuration! See [DOCKER.md](DOCKER.md) for complete guide.
+
+**Quick start:**
+```bash
+# Build
+docker build -t mqtt-logger .
+
+# Run
+docker run -d \
+  --name mqtt-logger \
+  --restart unless-stopped \
+  -v $(pwd)/data:/app/data \
+  -e MQTT_BROKER=mqtt.example.com \
+  -e TOPICS="sensors/#:sensors:Sensor data" \
+  mqtt-logger
+```
+
 ## Roadmap
 
+- [x] Docker container support
 - [ ] TLS/SSL support for MQTT
 - [ ] Web dashboard for viewing logs
 - [ ] Export to other formats (CSV, JSON)
 - [ ] Retention policies for old data
 - [ ] Prometheus metrics export
-- [ ] Docker container support
 

@@ -36,3 +36,20 @@ dev:  ## Run in development mode with debug logging
 	@echo "[mqtt]\nbroker = \"test.mosquitto.org\"\nport = 1883\n\n[database]\npath = \"data/dev.db\"\n\n[[topics]]\npattern = \"test/#\"\ntable_name = \"test_messages\"\n\n[logging]\nlevel = \"DEBUG\"" > config/dev.toml
 	uv run python main.py config/dev.toml
 
+docker-build:  ## Build Docker image
+	./build-docker.sh
+
+docker-run:  ## Run Docker container
+	./run-docker.sh
+
+docker-logs:  ## View Docker logs
+	docker logs -f mqtt-logger
+
+docker-stop:  ## Stop Docker container
+	docker stop mqtt-logger
+
+docker-clean:  ## Remove Docker container and image
+	docker stop mqtt-logger 2>/dev/null || true
+	docker rm mqtt-logger 2>/dev/null || true
+	docker rmi mqtt-logger:latest 2>/dev/null || true
+
