@@ -192,6 +192,10 @@ class MessageStore:
                     ],
                 )
                 self._conn.commit()
+                
+                # Explicitly checkpoint to merge WAL into main database file
+                # Without this, the WAL grows indefinitely due to our aggressive PRAGMA settings
+                self._conn.execute("CHECKPOINT")
 
                 logger.debug(
                     f"Flushed {len(messages)} messages to table '{tbl}'"
@@ -298,6 +302,13 @@ class MessageStore:
         # Flush all pending messages
         for table_name in list(self._batches.keys()):
             self.flush(table_name)
+
+        # Final checkpoint to ensure WAL is fully merged into main database
+        try:
+            self._conn.execute("CHECKPOINT")
+            logger.info("Final checkpoint completed - WAL merged to main database")
+        except Exception as e:
+            logger.warning(f"Final checkpoint failed: {e}")
 
         self._conn.close()
         logger.info("Database connection closed")

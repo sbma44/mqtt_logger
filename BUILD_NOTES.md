@@ -52,20 +52,37 @@ Subject: MQTT Logger Started Successfully
 MQTT Logger has started successfully!
 
 Container: mqtt-logger
-Start Time: Mon Dec 2 15:30:45 EST 2024
-MQTT Broker: mqtt.example.com:1883
-Database: /app/data/mqtt_logs.db
-Topics: christmas/tree/water/#:water_level:Tree water level
+Start Time: 2024-12-02 15:30:45 EST
 
-Configuration Summary:
-- Batch Size: 5000 messages
-- Flush Interval: 300 seconds
-- Log Level: INFO
+MQTT Configuration:
+  Broker: 192.168.1.2:1883
+  Client ID: (auto-generated)
+  QoS: 1
+  Username: (none)
 
-Email alerts are configured and active.
+Database Configuration:
+  Path: /app/data/mqtt_logs.db
+  Batch Size: 100 messages          ← Shows ACTUAL value after env override!
+  Flush Interval: 30 seconds         ← Shows ACTUAL value after env override!
 
-This is an automated notification.
+Topics:
+  • xmas/tree/water/raw → water_level (Tree water level)
+
+Logging:
+  Level: INFO
+  File: (stdout/journal only)
+
+Email Alerts:
+  Email: you@example.com
+  DB Size Threshold: (disabled) MB
+  Free Space Threshold: (disabled) MB
+  Cooldown: 24 hours
+
+This notification confirms that MQTT Logger started successfully with the
+configuration values shown above (including any environment variable overrides).
 ```
+
+**Important:** The email now shows the actual configuration values the application is using, including any environment variable overrides!
 
 ### Testing Startup Email
 

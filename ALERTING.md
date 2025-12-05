@@ -7,7 +7,8 @@ MQTT Logger can send email alerts when disk space or database size thresholds ar
 - **Database Size Monitoring**: Alert when the database file grows beyond a specified size
 - **Disk Space Monitoring**: Alert when free disk space drops below a threshold
 - **Rate Limiting**: Configurable cooldown period to prevent alert spam
-- **Zero External Dependencies**: Uses system `mail` command (typically via `msmtp`)
+- **Startup Notifications**: Automatic email on successful startup showing actual config values
+- **Zero External Dependencies**: Uses `msmtp` directly (no mail wrapper needed)
 
 ## Configuration
 

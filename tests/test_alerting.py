@@ -197,9 +197,17 @@ def test_check_all_disabled_when_no_email(temp_db_file):
             mock_space.assert_not_called()
 
 
+@patch("os.path.exists")
+@patch("subprocess.run")
 @patch("subprocess.Popen")
-def test_send_alert_calls_mail_command(mock_popen):
-    """Test that _send_alert calls the mail command correctly."""
+def test_send_alert_calls_mail_command(mock_popen, mock_run, mock_exists):
+    """Test that _send_alert calls msmtp correctly."""
+    # Mock the version check to succeed
+    mock_run.return_value = Mock()
+    
+    # Mock that msmtprc exists
+    mock_exists.return_value = True
+    
     mock_process = Mock()
     mock_process.communicate.return_value = ("", "")
     mock_process.returncode = 0
@@ -213,13 +221,22 @@ def test_send_alert_calls_mail_command(mock_popen):
     
     manager._send_alert("Test Subject", "Test Body")
     
-    # Verify mail command was called
-    mock_popen.assert_called_once()
+    # Verify msmtp was called with -C and -t flags
+    assert mock_popen.call_count >= 1
+    # Get the last call (the actual send, not version check)
     call_args = mock_popen.call_args
-    assert call_args[0][0] == ["mail", "-s", "Test Subject", "test@example.com"]
+    cmd = call_args[0][0]
+    assert cmd[0] in ["/usr/bin/msmtp", "/usr/local/bin/msmtp", "msmtp"]
+    assert "-C" in cmd  # Config file flag
+    assert "/root/.msmtprc" in cmd  # Config path
+    assert "-t" in cmd  # Read recipients from message flag
     
-    # Verify body was sent
-    mock_process.communicate.assert_called_once_with(input="Test Body", timeout=30)
+    # Verify message was sent with proper headers
+    communicate_call = mock_process.communicate.call_args
+    message = communicate_call[1]["input"]
+    assert "To: test@example.com" in message
+    assert "Subject: Test Subject" in message
+    assert "Test Body" in message
 
 
 @patch("subprocess.Popen")

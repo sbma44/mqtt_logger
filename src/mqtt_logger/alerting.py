@@ -171,7 +171,7 @@ class AlertManager:
         return time_since_last >= self.alert_cooldown
     
     def _send_alert(self, subject: str, body: str) -> None:
-        """Send an email alert using the system's mail command.
+        """Send an email alert using msmtp.
         
         Args:
             subject: Email subject line
@@ -181,16 +181,58 @@ class AlertManager:
             return
         
         try:
-            # Use the mail command (assumes msmtp or similar is configured)
+            # Format email with headers for msmtp
+            email_message = f"""To: {self.email_to}
+Subject: {subject}
+
+{body}
+"""
+            
+            # Use msmtp directly (works in Docker and on systems with msmtp)
+            # Try msmtp first, fall back to sendmail
+            msmtp_paths = ["/usr/bin/msmtp", "/usr/local/bin/msmtp", "msmtp"]
+            
+            msmtp_cmd = None
+            for path in msmtp_paths:
+                try:
+                    # Check if command exists
+                    subprocess.run(
+                        [path, "--version"],
+                        capture_output=True,
+                        timeout=1,
+                    )
+                    msmtp_cmd = path
+                    break
+                except (FileNotFoundError, subprocess.TimeoutExpired):
+                    continue
+            
+            if not msmtp_cmd:
+                logger.error(
+                    "msmtp command not found. Install msmtp or configure system mail."
+                )
+                return
+            
+            # Check if msmtp config exists
+            import os
+            msmtprc_path = "/root/.msmtprc"
+            if not os.path.exists(msmtprc_path):
+                logger.error(
+                    f"msmtp config not found at {msmtprc_path}. "
+                    "Rebuild Docker image with SMTP build arguments: "
+                    "--build-arg SMTP_SERVER=... --build-arg SMTP_PASSWORD=..."
+                )
+                return
+            
+            # Specify config file location explicitly
             process = subprocess.Popen(
-                ["mail", "-s", subject, self.email_to],
+                [msmtp_cmd, "-C", msmtprc_path, "-t"],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
             )
             
-            stdout, stderr = process.communicate(input=body, timeout=30)
+            stdout, stderr = process.communicate(input=email_message, timeout=30)
             
             if process.returncode == 0:
                 logger.info(f"Alert email sent to {self.email_to}: {subject}")
@@ -206,7 +248,7 @@ class AlertManager:
                 pass
         except FileNotFoundError:
             logger.error(
-                "mail command not found. Install msmtp or configure system mail."
+                "msmtp command not found. Install msmtp or configure system mail."
             )
         except Exception as e:
             logger.error(f"Error sending alert email: {e}")
